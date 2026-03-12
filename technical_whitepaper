@@ -1,0 +1,521 @@
+# Solanalyze Technical Whitepaper  
+**Public Technical Edition (Security-Redacted, Non-Replicable)**
+
+> This document provides a technical overview of Solanalyze for public audiences.  
+> It is intentionally redacted to protect sensitive infrastructure, security controls, and proprietary implementation details.  
+
+VERSION 0.9.12032026 BETA_PRERELEASESTAGE
+
+---
+
+## 1. Abstract
+
+Solanalyze is a forensic intelligence platform focused on wallet relationship analysis on Solana.  
+Its objective is to transform fragmented on-chain events into structured investigative signals that support decision-making for analysts, traders, research teams, and risk workflows.
+
+The platform combines graph-oriented analysis, funding path interpretation, behavioral clustering signals, and interactive visualization to answer a core forensic question:
+
+**Are observed wallets independent actors, or coordinated entities with shared operational patterns?**
+
+This whitepaper defines the public-safe technical architecture, analytical pipeline, security model, and operational design principles of the system.
+
+---
+
+## 2. Scope and Disclosure Boundary
+
+### 2.1 Included in this public technical whitepaper
+- High-level architecture and component boundaries
+- Public-safe data flow and analytical stages
+- Feature and module design at technical-concept level
+- Security and privacy principles
+- Reliability, observability, and lifecycle concepts
+- Governance and compliance-oriented controls (abstracted)
+
+### 2.2 Explicitly excluded from public disclosure
+- Source-level proprietary ranking/scoring formulas
+- Internal anti-abuse and fraud detection internals
+- Full production orchestration and private service topology
+- Infrastructure internals, host details, and runtime secrets
+- Credential material (keys/tokens/passwords/certificates)
+- Non-public endpoints, admin internals, and debug artifacts
+
+---
+
+## 3. Problem Domain and Technical Motivation
+
+Investigating wallet relationships on fast-moving chains is difficult due to:
+- High event density and noisy transfer surfaces
+- Multi-hop indirection between target entities
+- Reused funding channels and temporal masking strategies
+- Fragmented tooling that lacks unified investigative state
+
+Manual explorer-based workflows are slow and inconsistent.  
+Solanalyze addresses this by building an end-to-end analytical loop:
+
+1. **Ingestion and normalization of wallet-centric events**
+2. **Relationship extraction across direct and indirect paths**
+3. **Contextual interpretation via module-level signal aggregation**
+4. **Graph rendering and analyst-friendly evidence presentation**
+
+---
+
+## 4. System Architecture
+
+Solanalyze follows a modular architecture with clean separation between UI, analysis services, persistence, and monitoring.
+
+## 4.1 Logical architecture layers
+
+1. **Presentation Layer (Web UI)**
+   - Investigator input forms and workflow control
+   - Result rendering (tables, cards, timelines, graph view)
+   - Authentication-aware access behavior
+   - Export/report-oriented visualization components
+
+2. **Application/API Layer**
+   - Request validation and orchestration
+   - Analysis job lifecycle handling
+   - Result aggregation and response shaping
+   - Access policy checks and session-aware controls
+
+3. **Analysis Engine Layer**
+   - Direct link extraction
+   - Common funder detection
+   - Intermediate path inference
+   - Funding source interpretation
+   - DEX/protocol interaction classification
+   - Confidence and evidence packaging
+
+4. **Data Layer**
+   - Structured storage for normalized analysis artifacts
+   - Caching of repeat computations
+   - Optional historical snapshots for consistency in repeated investigations
+
+5. **Operations Layer**
+   - Logging and observability controls
+   - Background watchers / periodic routines
+   - Deployment and runtime policy enforcement
+
+---
+
+## 5. Functional Modules
+
+## 5.1 Input Validation Module
+Responsibilities:
+- Validate wallet address format and deduplicate targets
+- Enforce request size and shape constraints
+- Reject malformed or unsupported payloads early
+
+Public-safe constraints:
+- No public disclosure of internal abuse thresholds
+- No publication of internal policy tuning values
+
+## 5.2 Direct Relationship Module
+Purpose:
+- Identify direct transfer edges among target wallets
+- Preserve directionality and event context metadata (non-sensitive)
+
+Output examples:
+- `A -> B` direct relation (count/recency abstractions)
+- Edge role annotation (sender/receiver pattern class)
+
+## 5.3 Shared Funder Module
+Purpose:
+- Identify external wallets that fund multiple target wallets
+- Surface repeated funding patterns and overlap windows
+
+Analytical value:
+- Detect potential coordination structures with no direct target-target edge
+
+## 5.4 Intermediate Path Module
+Purpose:
+- Detect one-hop bridge patterns and pathway convergence
+- Support explainable relationship hypotheses (`A -> X -> B`)
+
+Public-safe note:
+- Internal path scoring heuristics are proprietary and not disclosed.
+
+## 5.5 Funding Origin Interpretation Module
+Purpose:
+- Track historical incoming flow sources at an abstracted forensic level
+- Build lineage-oriented summaries for target wallets
+
+## 5.6 DEX Interaction Profiling Module
+Purpose:
+- Classify transfer context around protocol interactions
+- Identify temporal overlap and behavioral similarity signals
+
+## 5.7 Network Visualization Module
+Purpose:
+- Convert computed entities and relationships into an interactive graph
+- Enable fast analyst comprehension of complex relationship topology
+
+Key principles:
+- Semantic node/edge typing
+- Visual distinction between targets, intermediaries, and funders
+- Investigative readability over cosmetic complexity
+
+---
+
+## 6. End-to-End Analysis Pipeline (Conceptual)
+
+```pseudo
+INPUT: target_wallets[]
+
+targets = validate_and_normalize(target_wallets)
+events  = ingest_wallet_event_windows(targets)
+
+transfers = normalize_transfers(events)
+
+direct_edges     = extract_direct_edges(transfers, targets)
+shared_funders   = detect_shared_funding_sources(transfers, targets)
+one_hop_paths    = infer_intermediate_paths(transfers, targets)
+funding_lineage  = map_funding_origins(transfers, targets)
+dex_profiles     = classify_protocol_interactions(transfers)
+
+evidence_bundle = aggregate(
+  direct_edges,
+  shared_funders,
+  one_hop_paths,
+  funding_lineage,
+  dex_profiles
+)
+
+graph_model = build_investigation_graph(evidence_bundle)
+
+OUTPUT: structured_investigation_report(graph_model, evidence_bundle)
+```
+
+This representation is intentionally simplified and excludes proprietary logic.
+
+### 6.1 Redacted implementation example (pipeline orchestration)
+
+```js
+// illustrative only (redacted / non-replicable)
+const allTransfers = [];
+const seenTransferKeys = new Set();
+
+for (const wallet of wallets) {
+  const txs = await fetchEnhancedTransactions(wallet, userKey, limit, useProxy);
+
+  for (const tx of txs) {
+    const transfers = extractTransfers(tx);
+    for (const t of transfers) {
+      const dedupeKey = `${t.signature}|${t.from}|${t.to}|${t.amount}|${t.type}`;
+      if (!seenTransferKeys.has(dedupeKey)) {
+        seenTransferKeys.add(dedupeKey);
+        allTransfers.push(t);
+      }
+    }
+  }
+}
+
+const directLinks = findDirectLinks(allTransfers, analyzedSet);
+const funders     = findCommonFunders(allTransfers, wallets, analyzedSet);
+const graph       = buildNetworkGraph(/* ... */);
+```
+
+This snippet documents orchestration style (fetch → normalize → dedupe → correlate → graph), not proprietary heuristics.
+
+---
+
+## 7. Data Model (Abstract)
+
+## 7.1 Core entity classes
+- **WalletEntity**: analyzed wallet identity abstraction
+- **TransferEvent**: normalized movement record abstraction
+- **RelationshipEdge**: typed connection between entities
+- **EvidenceRecord**: module-specific finding with provenance metadata
+- **InvestigationReport**: unified output package for UI/reporting
+
+## 7.2 Relationship categories (public-safe)
+- Direct transfer edge
+- Shared funder relation
+- One-hop intermediary relation
+- Funding lineage relation
+- Interaction overlap relation
+
+## 7.3 Evidence philosophy
+Each relationship output should be:
+- Explainable
+- Traceable
+- Contextualized
+- Suitable for analyst review (not blind automation)
+
+---
+
+## 8. API and Service Interaction Model (Abstract)
+
+Solanalyze uses a service-based API model for:
+- Analysis request intake
+- Job/state retrieval
+- Result retrieval and rendering payload delivery
+- Authentication and account-scoped actions
+
+Public security controls include:
+- Input schema validation
+- Authentication-gated endpoints for protected operations
+- Safe error handling without internal leakage
+- Rate and abuse protection (details undisclosed)
+
+No private routes, host details, ports, internal tokens, or server topology are exposed in this whitepaper.
+
+### 8.1 Redacted implementation example (request validation + access gate)
+
+```js
+// illustrative only (redacted / non-replicable)
+app.post("/api/<feature>", authRequired, (req, res) => {
+  const schema = z.object({
+    fieldA: z.string().min(1),
+    fieldB: z.number().optional(),
+  });
+
+  const parsed = schema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "Invalid payload" });
+  }
+
+  // internal orchestration...
+  return res.json({ ok: true, data: {/* ... */} });
+});
+```
+
+This snippet demonstrates the pattern (schema validation + auth middleware), not full operational behavior.
+
+---
+
+## 9. Frontend Technical Architecture (Public-Safe)
+
+Observed platform design is consistent with component-driven UI architecture:
+
+- **Route-scoped pages** for primary flows (landing, analysis, tracer, account/admin contexts)
+- **Feature components** for specialized rendering (e.g., connection/funding/path sections)
+- **Context and hooks** for session and analysis state management
+- **Visualization components** for graph-oriented forensic output
+
+Design priorities:
+- Fast interpretation of complex graph findings
+- Clear separation between summary and deep-dive views
+- Stable analyst workflow under repeated runs
+
+### 9.1 Redacted implementation example (provider mode selection in client flow)
+
+```js
+// illustrative only (redacted / non-replicable)
+const useProxy = heliusMode === "included";
+
+async function fetchTransactions(address, apiKey) {
+  if (useProxy) {
+    return fetch("/api/helius/proxy", {
+      method: "POST",
+      credentials: "include",
+      body: JSON.stringify({ action: "enhanced-transactions", params: { address } }),
+    });
+  }
+
+  // trial mode: user-owned key path (key never hardcoded in app source)
+  return fetch("<provider-endpoint-redacted>", {
+    method: "GET",
+    headers: { "x-user-provider-key": apiKey },
+  });
+}
+```
+
+The real implementation uses stricter validation/error handling; this snippet only documents architecture intent.
+
+---
+
+## 10. Backend Technical Architecture (Public-Safe)
+
+Backend design is organized around:
+- Application server entrypoint
+- Config and utility abstraction
+- Database integration module
+- Analysis-support and watcher-style routines
+
+Public-safe operational principles:
+- Defensive parsing and strict validation
+- Centralized configuration handling (without exposing raw config values)
+- Log discipline aligned with security and compliance
+- Controlled background processing for periodic tasks
+
+No deployment internals, host identifiers, private config files, or credential pathways are published.
+
+### 10.1 Redacted implementation example (subscription access model)
+
+```js
+// illustrative only (redacted / non-replicable)
+function computeAccess(subscription, user) {
+  if (user?.role === "admin") {
+    return { hasAccess: true, mode: "included" };
+  }
+
+  const trialActive = /* internal date logic */;
+  const paidActive  = /* internal date logic */;
+
+  return {
+    hasAccess: trialActive || paidActive,
+    mode: paidActive ? "included" : "own_key",
+  };
+}
+```
+
+This reflects the real design direction (trial vs paid/admin mode separation) while omitting internal scoring/timing details.
+
+### 10.2 Redacted implementation example (provider proxy boundary)
+
+```js
+// illustrative only (redacted / non-replicable)
+app.post("/api/provider/proxy", authRequired, async (req, res) => {
+  const access = computeAccess(/* ... */);
+  if (!access.hasAccess || access.mode !== "included") {
+    return res.status(403).json({ error: "Access denied" });
+  }
+
+  const providerKey = getServerSideProviderKeyForUser(/* ... */);
+  // provider call is executed server-side; key never exposed to browser
+  const data = await callProviderApi({ action: req.body.action, key: providerKey });
+  return res.json({ ok: true, data });
+});
+```
+
+This captures the security boundary: included-tier users access provider functionality via backend proxy.
+
+---
+
+## 11. Security Architecture and Hardening Principles
+
+## 11.1 Security baseline
+- Zero inclusion of SSH keys/passwords/API secrets in public docs
+- No IP addresses or private host references
+- No production credential or token examples
+- No internal-only endpoint disclosure
+
+## 11.2 Application security controls
+- Input sanitation and schema constraints
+- Authn/Authz boundaries around protected actions
+- Safe exception handling and response minimization
+- Abuse throttling and request governance (redacted specifics)
+
+## 11.3 Data protection posture
+- Principle of least privilege for operational access
+- Separation of public artifacts and private operational assets
+- Environment-driven secret management (implementation withheld)
+- Public repository hygiene to avoid accidental leakage
+
+## 11.4 Supply-chain and dependency discipline
+- Controlled dependency lifecycle
+- Security patching cadence
+- Artifact review before public publication
+
+---
+
+## 12. Threat Model (Public Technical View)
+
+Primary threat categories considered:
+
+1. **Credential leakage**
+   - Mitigation: strict exclusion policy, secret scanning, no sensitive examples in docs
+
+2. **Endpoint reconnaissance**
+   - Mitigation: avoid publishing internal topology and private routes
+
+3. **Abuse and denial patterns**
+   - Mitigation: request governance and anti-abuse controls (non-public)
+
+4. **Inference attacks on proprietary logic**
+   - Mitigation: abstraction and redaction of core scoring internals
+
+5. **Data integrity manipulation**
+   - Mitigation: validation chains, consistency checks, evidence traceability
+
+---
+
+## 13. Reliability, Scalability, and Performance Strategy
+
+## 13.1 Reliability goals
+- Deterministic behavior for identical analysis inputs (within data window constraints)
+- Graceful handling of partial upstream data limitations
+- Stable UI response with analyst-centric fallback messaging
+
+## 13.2 Scalability approaches (conceptual)
+- Caching for recurring analytical computations
+- Modular computation stages for selective recomputation
+- Background processing for non-interactive heavy workloads
+
+## 13.3 Performance focus areas
+- Efficient transfer normalization
+- Graph assembly optimization
+- Render-focused payload shaping for UI responsiveness
+
+Exact thresholds, infra sizing, and tuning values are intentionally not disclosed.
+
+---
+
+## 14. Observability and Quality Engineering
+
+## 14.1 Observability
+- Structured logs for investigation lifecycle events
+- Error classification for quick triage
+- Operational telemetry (public details redacted)
+
+## 14.2 Testing and quality
+- Module-level logic testing for analysis functions
+- API behavior testing (validation/error contracts)
+- UI integration checks for critical investigative paths
+- Regression controls for output consistency in known scenarios
+
+No internal CI secrets, runner configuration internals, or private test fixtures are disclosed.
+
+---
+
+## 15. Privacy, Legal, and Governance Posture
+
+Solanalyze is designed as a forensic decision-support tool:
+- It generates analytical signals and evidence views
+- It does not claim legal adjudication authority
+- Human analyst judgment remains central
+
+Governance-oriented principles:
+- Data minimization where possible
+- Clear boundary between public showcase and private production
+- Documentation discipline to prevent over-disclosure
+- IP protection through non-replicable public abstraction
+
+---
+
+## 16. Roadmap Direction (Technical Themes)
+
+Future technical growth themes include:
+- Enhanced explainability layers (human-readable findings summaries)
+- Improved confidence framing and signal weighting transparency
+- Extended monitoring capabilities for post-event lifecycle analysis
+- Mobile-first investigation access and workflow portability
+
+All roadmap items are indicative and subject to product, risk, and engineering priorities.
+
+---
+
+## 17. Public Repository Publication Policy
+
+For public publication, include:
+- Curated UI/UX showcase assets
+- Redacted technical documentation (like this whitepaper)
+- Demonstration media and non-sensitive examples
+
+Do not include:
+- Keys, passwords, tokens, certificates
+- Internal infrastructure files or private deployment configs
+- Admin internals, private scripts, SQL/debug artifacts
+- Any file that reveals host/IP topology or operational secrets
+
+---
+
+## 18. Conclusion
+
+Solanalyze provides a technically structured approach to wallet relationship intelligence by combining data normalization, relationship extraction, evidence aggregation, and graph-native presentation.
+
+This technical whitepaper is deliberately public-safe:
+- It demonstrates architectural maturity and analytical depth
+- It preserves operational security and proprietary defensibility
+- It enforces strict exclusion of sensitive material (SSH keys, passwords, IPs, secrets)
+
