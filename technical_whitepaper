@@ -4,7 +4,7 @@
 > This document provides a technical overview of Solanalyze for public audiences.  
 > It is intentionally redacted to protect sensitive infrastructure, security controls, and proprietary implementation details.  
 
-VERSION 0.9.12032026 BETA_PRERELEASESTAGE
+VERSION 0.9.14032026 BETA_PRERELEASESTAGE
 
 ---
 
@@ -13,7 +13,7 @@ VERSION 0.9.12032026 BETA_PRERELEASESTAGE
 Solanalyze is a forensic intelligence platform focused on wallet relationship analysis on Solana.  
 Its objective is to transform fragmented on-chain events into structured investigative signals that support decision-making for analysts, traders, research teams, and risk workflows.
 
-The platform combines graph-oriented analysis, funding path interpretation, behavioral clustering signals, and interactive visualization to answer a core forensic question:
+The platform combines graph-oriented analysis, funding path interpretation, behavioral clustering signals, deep counterparty discovery, shared token detection, and interactive visualization to answer a core forensic question:
 
 **Are observed wallets independent actors, or coordinated entities with shared operational patterns?**
 
@@ -48,417 +48,414 @@ Investigating wallet relationships on fast-moving chains is difficult due to:
 - Multi-hop indirection between target entities
 - Reused funding channels and temporal masking strategies
 - Fragmented tooling that lacks unified investigative state
+- Hidden connections through shared token activity and counterparty overlap
 
 Manual explorer-based workflows are slow and inconsistent.  
 Solanalyze addresses this by building an end-to-end analytical loop:
 
 1. **Ingestion and normalization of wallet-centric events**
-2. **Relationship extraction across direct and indirect paths**
-3. **Contextual interpretation via module-level signal aggregation**
-4. **Graph rendering and analyst-friendly evidence presentation**
+2. **Relationship extraction across multiple analytical dimensions**
+3. **Deep counterparty discovery to reveal hidden connections**
+4. **Shared token activity detection with confidence scoring**
+5. **Evidence aggregation and confidence-weighted presentation**
+6. **Interactive graph-native visualization for pattern recognition**
 
 ---
 
-## 4. System Architecture
+## 4. System Architecture Overview
 
-Solanalyze follows a modular architecture with clean separation between UI, analysis services, persistence, and monitoring.
+### 4.1 Frontend Layer
+- **Framework:** React 18 + Vite (SPA)
+- **Styling:** Tailwind CSS with custom design system (dark forensic theme)
+- **Routing:** React Router v6 (client-side)
+- **Visualization:** d3-force for interactive 3D network graphs
+- **State Management:** React Context + custom hooks
 
-## 4.1 Logical architecture layers
+### 4.2 Backend Layer
+- **Runtime:** Node.js + Express
+- **Database:** PostgreSQL (user accounts, subscriptions, billing)
+- **Authentication:** Session-based with email verification
+- **Payment Processing:** On-chain SOL payment detection with automatic plan activation
+- **API Proxy:** Server-side Helius API proxy for paid plan users
 
-1. **Presentation Layer (Web UI)**
-   - Investigator input forms and workflow control
-   - Result rendering (tables, cards, timelines, graph view)
-   - Authentication-aware access behavior
-   - Export/report-oriented visualization components
+### 4.3 Data Source Layer
+- **Primary:** Helius Enhanced Transactions API (Solana)
+- **Token Metadata:** Helius DAS API + Pump.fun metadata enrichment
+- **On-chain Verification:** Solana Web3.js for payment detection
 
-2. **Application/API Layer**
-   - Request validation and orchestration
-   - Analysis job lifecycle handling
-   - Result aggregation and response shaping
-   - Access policy checks and session-aware controls
-
-3. **Analysis Engine Layer**
-   - Direct link extraction
-   - Common funder detection
-   - Intermediate path inference
-   - Funding source interpretation
-   - DEX/protocol interaction classification
-   - Confidence and evidence packaging
-
-4. **Data Layer**
-   - Structured storage for normalized analysis artifacts
-   - Caching of repeat computations
-   - Optional historical snapshots for consistency in repeated investigations
-
-5. **Operations Layer**
-   - Logging and observability controls
-   - Background watchers / periodic routines
-   - Deployment and runtime policy enforcement
+### 4.4 Deployment
+- **Hosting:** Dedicated server with nginx reverse proxy
+- **SSL:** Let's Encrypt TLS certificates
+- **Process Management:** PM2 for Node.js process lifecycle
 
 ---
 
-## 5. Functional Modules
+## 5. Analysis Modules
 
-## 5.1 Input Validation Module
-Responsibilities:
-- Validate wallet address format and deduplicate targets
-- Enforce request size and shape constraints
-- Reject malformed or unsupported payloads early
+Solanalyze implements **10 core analysis modules** that work together to build a comprehensive picture of wallet relationships.
 
-Public-safe constraints:
-- No public disclosure of internal abuse thresholds
-- No publication of internal policy tuning values
+### 5.1 Direct Link Detection
+Detects direct SOL and token transfer relationships between analyzed wallets.
 
-## 5.2 Direct Relationship Module
-Purpose:
-- Identify direct transfer edges among target wallets
-- Preserve directionality and event context metadata (non-sensitive)
+**Capabilities:**
+- Identifies all direct SOL transfers between any pair of analyzed wallets
+- Detects token transfers (SPL tokens) between analyzed wallets
+- Aggregates total SOL volume, transaction count, and token transfer count per link
+- Records first-seen and last-seen timestamps for temporal analysis
+- Preserves transaction signatures for evidence verification on Solscan
 
-Output examples:
-- `A -> B` direct relation (count/recency abstractions)
-- Edge role annotation (sender/receiver pattern class)
+**Output:** Per-pair transfer summary with SOL amounts, token volumes, timestamps, and evidence signatures.
 
-## 5.3 Shared Funder Module
-Purpose:
-- Identify external wallets that fund multiple target wallets
-- Surface repeated funding patterns and overlap windows
+### 5.2 Common Funder Discovery
+Identifies external wallets that funded multiple target wallets, revealing shared funding origins.
 
-Analytical value:
-- Detect potential coordination structures with no direct target-target edge
+**Capabilities:**
+- Scans incoming transfer history for each analyzed wallet
+- Identifies wallets that appear as funders for 2+ analyzed wallets
+- Aggregates total SOL funded, transaction count, and temporal range per funder
+- Distinguishes between known exchange wallets and unknown funders
+- Extends with Deep Discovery findings (new funders found via counterparty scanning)
 
-## 5.4 Intermediate Path Module
-Purpose:
-- Detect one-hop bridge patterns and pathway convergence
-- Support explainable relationship hypotheses (`A -> X -> B`)
+**Output:** List of common funders with funded wallet details, SOL amounts, and temporal metadata.
 
-Public-safe note:
-- Internal path scoring heuristics are proprietary and not disclosed.
+### 5.3 Intermediate Path Tracing
+Reveals bridge patterns (A → X → B) where wallet A sends to intermediary X, which then sends to wallet B.
 
-## 5.5 Funding Origin Interpretation Module
-Purpose:
-- Track historical incoming flow sources at an abstracted forensic level
-- Build lineage-oriented summaries for target wallets
+**Capabilities:**
+- Detects one-hop intermediate paths between analyzed wallets
+- Supports multi-hop chain detection (A → X → Y → B) via Deep Discovery
+- Records full path with wallet addresses and labels
+- Calculates total SOL flow through the intermediate path
+- Preserves all transaction signatures along the path
 
-## 5.6 DEX Interaction Profiling Module
-Purpose:
-- Classify transfer context around protocol interactions
-- Identify temporal overlap and behavioral similarity signals
+**Output:** Path objects with full address chain, labels, hop count, SOL volume, and evidence.
 
-## 5.7 Network Visualization Module
-Purpose:
-- Convert computed entities and relationships into an interactive graph
-- Enable fast analyst comprehension of complex relationship topology
+### 5.4 Funding Source Mapping
+Tracks historical incoming-fund origins for each analyzed wallet.
 
-Key principles:
-- Semantic node/edge typing
-- Visual distinction between targets, intermediaries, and funders
-- Investigative readability over cosmetic complexity
+**Capabilities:**
+- Identifies the primary funding source for each wallet
+- Detects known exchange wallets (Binance, Coinbase, Kraken, OKX, Bybit, KuCoin)
+- Records funding amount, timestamp, and total unique funders
+- Extends with Deep Discovery findings (additional funding sources found via scanning)
+- Marks funding sources discovered via deep search with a special flag
+
+**Output:** Per-wallet funding origin with source address, label, amount, and metadata.
+
+### 5.5 DEX Interaction Profiling
+Extracts protocol-level behavior patterns across decentralized trading venues.
+
+**Capabilities:**
+- Identifies interactions with major Solana DEX protocols:
+  - Jupiter v4/v6, Raydium AMM/CLMM, Orca Whirlpool/v2
+  - Phoenix DEX, Meteora DLMM/Pools, Serum DEX
+  - Pump.fun (current and legacy programs)
+- Counts interaction frequency per protocol per wallet
+- Estimates trading volume where detectable
+- Classifies transaction sources (JUPITER, RAYDIUM, PUMP_FUN, etc.)
+
+**Output:** Protocol interaction matrix with counts and volume estimates.
+
+### 5.6 Token Launch Detection
+Detects token creation events (Pump.fun launches, Raydium pool creation) and identifies insider buying patterns.
+
+**Capabilities:**
+- Detects Pump.fun token launches by analyzed wallets
+- Detects Raydium liquidity pool creation events
+- Identifies which analyzed wallets bought the launched token
+- Records buy timing relative to launch (sniper detection)
+- Enriches with token metadata (name, symbol, image) via Pump.fun API
+- Calculates initial liquidity and buyer SOL amounts
+
+**Output:** Launch events with deployer, token metadata, buyer list, timing, and liquidity data.
+
+### 5.7 Deep Discovery (Deep Search) ⭐ NEW
+The most powerful analysis module. Scans significant counterparties of analyzed wallets to find hidden connections that don't appear in direct analysis.
+
+**Capabilities:**
+- **Counterparty Scoring:** Identifies significant recipients from each analyzed wallet using a proprietary scoring system that filters out noise (protocol wallets, Jito tips, high-interaction addresses)
+- **Blacklist Filtering:** Automatically excludes known non-user addresses:
+  - Jito tip accounts (all 8 known)
+  - Protocol fee collectors and program wallets
+  - System programs and token programs
+  - Known high-frequency bot addresses
+- **Discovery Scanning:** Fetches transaction history for top-scored counterparties
+- **Connection Type Detection:** Classifies discovered connections as:
+  - `mutual_contact` — Discovery wallet transacted with both Wallet A and Wallet B
+  - `fund_relay` — Discovery wallet received from A and sent to B (or vice versa)
+  - `shared_recipient` — Both A and B sent to the same discovery wallet
+  - `shared_funder` — Discovery wallet funded both A and B
+  - `chain_connection` — Multi-hop chain (A → X → Y → B) where X and Y are both discovery wallets
+- **Confidence Scoring:** Each discovered connection receives a confidence score based on:
+  - Connection type weight
+  - Transaction count and SOL volume
+  - Temporal proximity bonus (transactions close in time score higher)
+- **Module Extension:** Deep Discovery extends ALL other modules:
+  - Adds newly found direct links to the Direct Links results
+  - Adds newly found common funders to the Common Funders results
+  - Adds newly found intermediate paths to the Intermediate Links results
+  - Adds newly found funding sources to the Funding Sources results
+
+**Access:** Available on Monthly, Yearly, and Pay-per-Use plans (not available during free trial). Costs 30 credits per scan on Pay-per-Use plans.
+
+**Output:** Discovered connection objects with wallet paths, connection types, confidence scores, SOL volumes, and evidence signatures.
+
+### 5.8 Shared Token Activity ⭐ NEW
+Detects when multiple analyzed wallets traded or held the same token, with confidence scoring based on temporal proximity.
+
+**Capabilities:**
+- Scans all token transfer activity across analyzed wallets
+- Identifies tokens that appear in transactions of 2+ analyzed wallets
+- **Confidence Scoring:** Calculates a confidence percentage based on:
+  - Number of overlapping transactions
+  - Temporal proximity of trades (closer trades = higher confidence)
+  - Buy/sell pattern correlation
+- **Activity Breakdown:** Per-wallet activity details including:
+  - Buy count, sell count, total transaction count
+  - Transaction signatures for evidence
+- **Token Metadata Enrichment:** Fetches token name, symbol, and image via API
+  - Special handling for Pump.fun tokens (links to pump.fun/coin/)
+  - Links to DexScreener and Birdeye for further analysis
+
+**Output:** Shared token connections with wallet pairs, token mint, confidence score, per-wallet activity, and evidence.
+
+### 5.9 Wallet Labels (Investigator Annotation)
+Allows investigators to assign custom human-readable names to wallet addresses for improved readability across all result sections.
+
+**Capabilities:**
+- Assign labels to up to 10 analyzed wallets before or during analysis
+- Labels propagate to ALL result sections (Direct Links, Common Funders, Intermediate Paths, Deep Discovery, Shared Tokens, Network Graph, etc.)
+- Labels appear as colored badges next to truncated addresses
+- Labels are preserved in JSON export for report sharing
+- Maximum 20 characters per label
+
+**Output:** Label map applied across all visualization and result components.
+
+### 5.10 Interactive Network Graph
+Converts all findings into an interactive force-directed graph for visual pattern recognition.
+
+**Capabilities:**
+- **Node Types:** Analyzed wallets, intermediate wallets, exchange wallets, discovery wallets
+- **Edge Types:** Direct transfers, funding flows, intermediate paths, discovered connections
+- **Interactivity:** Drag, zoom, hover tooltips with wallet details
+- **Color Coding:** Distinct colors for different node/edge types
+- **Dynamic Layout:** d3-force simulation with collision detection
+- **Label Integration:** Wallet labels displayed on graph nodes
+- **Discovery Integration:** Nodes found via Deep Discovery are added to the graph with special styling
+
+**Output:** Interactive SVG/Canvas graph with nodes, edges, labels, and tooltips.
 
 ---
 
-## 6. End-to-End Analysis Pipeline (Conceptual)
+## 6. Analysis Pipeline (Public-Safe)
+
+Below is a simplified, non-sensitive representation of the analysis flow:
 
 ```pseudo
-INPUT: target_wallets[]
+INPUT: wallet_addresses[], options { deepDiscovery, walletLabels }
 
-targets = validate_and_normalize(target_wallets)
-events  = ingest_wallet_event_windows(targets)
+1. VALIDATE
+   validate_addresses(wallet_addresses)  // max 10, base58 format
 
-transfers = normalize_transfers(events)
+2. INGEST
+   for each wallet:
+     fetch_transactions(wallet, limit=100)
+     normalize_transfers(transactions)
+     classify_programs(transactions)  // DEX, token, system
 
-direct_edges     = extract_direct_edges(transfers, targets)
-shared_funders   = detect_shared_funding_sources(transfers, targets)
-one_hop_paths    = infer_intermediate_paths(transfers, targets)
-funding_lineage  = map_funding_origins(transfers, targets)
-dex_profiles     = classify_protocol_interactions(transfers)
+3. ANALYZE — CORE MODULES
+   direct_links       = find_direct_transfers(wallets, all_transfers)
+   intermediate_links = find_intermediate_paths(wallets, all_transfers)
+   common_funders     = find_common_funders(wallets, all_transfers)
+   funding_sources    = map_funding_origins(wallets, all_transfers)
+   dex_activity       = profile_dex_interactions(wallets, all_transfers)
+   token_launches     = detect_token_launches(wallets, all_transfers)
+   shared_tokens      = detect_shared_token_activity(wallets, all_transfers)
 
-evidence_bundle = aggregate(
-  direct_edges,
-  shared_funders,
-  one_hop_paths,
-  funding_lineage,
-  dex_profiles
-)
+4. DEEP DISCOVERY (if enabled)
+   significant_recipients = score_counterparties(wallets, all_transfers)
+   filter_blacklisted(significant_recipients)
+   for each discovery_wallet in top_recipients:
+     fetch_transactions(discovery_wallet)
+     discovered_connections = find_hidden_links(discovery_wallet, wallets)
+     classify_connection_type(discovered_connections)
+     score_confidence(discovered_connections)
+   
+   // Extend core modules with deep findings
+   extend_direct_links(direct_links, deep_findings)
+   extend_common_funders(common_funders, deep_findings)
+   extend_intermediate_links(intermediate_links, deep_findings)
+   extend_funding_sources(funding_sources, deep_findings)
 
-graph_model = build_investigation_graph(evidence_bundle)
+5. BUILD GRAPH
+   network_graph = build_network_graph(wallets, all_findings)
+   if deep_discovery:
+     add_discovered_nodes(network_graph, discovered_connections)
 
-OUTPUT: structured_investigation_report(graph_model, evidence_bundle)
+6. OUTPUT
+   return {
+     summary, direct_links, intermediate_links, common_funders,
+     funding_sources, dex_activity, token_launches,
+     shared_tokens, discovered_connections, network_graph,
+     recent_transactions
+   }
 ```
 
-This representation is intentionally simplified and excludes proprietary logic.
+---
 
-### 6.1 Redacted implementation example (pipeline orchestration)
+## 7. Blacklist and Filtering System
 
-```js
-// illustrative only (redacted / non-replicable)
-const allTransfers = [];
-const seenTransferKeys = new Set();
+To ensure analysis quality, Solanalyze maintains a comprehensive blacklist of non-user addresses that are automatically excluded from connection analysis.
 
-for (const wallet of wallets) {
-  const txs = await fetchEnhancedTransactions(wallet, userKey, limit, useProxy);
+### 7.1 Blacklisted Address Categories
+- **Jito Tip Accounts:** All 8 known Jito MEV tip receiver addresses
+- **Protocol Fee Wallets:** Fee collectors for major DEX protocols
+- **System Programs:** Solana system program, token program, compute budget
+- **Associated Token Program:** ATA creation addresses
+- **Known Bot Addresses:** High-frequency automated trading addresses
 
-  for (const tx of txs) {
-    const transfers = extractTransfers(tx);
-    for (const t of transfers) {
-      const dedupeKey = `${t.signature}|${t.from}|${t.to}|${t.amount}|${t.type}`;
-      if (!seenTransferKeys.has(dedupeKey)) {
-        seenTransferKeys.add(dedupeKey);
-        allTransfers.push(t);
-      }
-    }
-  }
-}
-
-const directLinks = findDirectLinks(allTransfers, analyzedSet);
-const funders     = findCommonFunders(allTransfers, wallets, analyzedSet);
-const graph       = buildNetworkGraph(/* ... */);
-```
-
-This snippet documents orchestration style (fetch → normalize → dedupe → correlate → graph), not proprietary heuristics.
+### 7.2 Dynamic Filtering
+- **High-Interaction Filter:** Addresses that interact with an unusually high number of wallets are deprioritized in Deep Discovery scoring
+- **Program Wallet Filter:** Known program-derived addresses are excluded
+- **Exchange Wallet Classification:** Known exchange deposit/withdrawal addresses (Binance, Coinbase, Kraken, OKX, Bybit, KuCoin) are classified but not excluded — they provide valuable intelligence
 
 ---
 
-## 7. Data Model (Abstract)
+## 8. Pricing and Access Model
 
-## 7.1 Core entity classes
-- **WalletEntity**: analyzed wallet identity abstraction
-- **TransferEvent**: normalized movement record abstraction
-- **RelationshipEdge**: typed connection between entities
-- **EvidenceRecord**: module-specific finding with provenance metadata
-- **InvestigationReport**: unified output package for UI/reporting
+Solanalyze operates a transparent, on-chain payment model using SOL on the Solana blockchain.
 
-## 7.2 Relationship categories (public-safe)
-- Direct transfer edge
-- Shared funder relation
-- One-hop intermediary relation
-- Funding lineage relation
-- Interaction overlap relation
+### 8.1 Free Trial
+- **Duration:** 7 days from registration
+- **Access:** All core analysis modules
+- **Helius API:** Bring Your Own Key (BYOK) — users provide their own free Helius API key
+- **Limitations:** Deep Discovery is locked during trial
+- **No payment required**
 
-## 7.3 Evidence philosophy
-Each relationship output should be:
-- Explainable
-- Traceable
-- Contextualized
-- Suitable for analyst review (not blind automation)
+### 8.2 Monthly Flatrate
+- **Price:** 0.5 SOL / month
+- **Access:** All modules including Deep Discovery
+- **Helius API:** Included (server-side proxy)
+- **Queries:** Unlimited
+- **Auto-detection:** Payment detected within 60 seconds
 
----
+### 8.3 Yearly Flatrate
+- **Price:** 4.0 SOL / year (33% savings vs monthly)
+- **Access:** All modules including Deep Discovery
+- **Helius API:** Included (server-side proxy)
+- **Queries:** Unlimited
+- **Auto-detection:** Payment detected within 60 seconds
 
-## 8. API and Service Interaction Model (Abstract)
+### 8.4 Pay-per-Use Credits
+- **Cost per query:** 10 credits
+- **Deep Discovery cost:** 30 credits per scan (additional)
+- **Helius API:** Included (server-side proxy)
+- **Credits never expire**
 
-Solanalyze uses a service-based API model for:
-- Analysis request intake
-- Job/state retrieval
-- Result retrieval and rendering payload delivery
-- Authentication and account-scoped actions
+| SOL Amount | Credits | Queries | Deep Discovery Scans |
+|-----------|---------|---------|---------------------|
+| 0.10 SOL  | 500     | 50      | ~16                 |
+| 0.20 SOL  | 1,250   | 125     | ~41                 |
+| 0.30 SOL  | 2,250   | 225     | ~75                 |
+| 0.40 SOL  | 3,500   | 350     | ~116                |
 
-Public security controls include:
-- Input schema validation
-- Authentication-gated endpoints for protected operations
-- Safe error handling without internal leakage
-- Rate and abuse protection (details undisclosed)
+### 8.5 Payment Mechanics
+- **Payment Wallet:** `ADwDdN9EJvRhwZk1kv8WcmAbh973QoaBhc4johxNYNiM`
+- **Detection:** Automatic on-chain payment watcher (polls every ~60 seconds)
+- **Overpayment:** Stored as credit balance, applied to future renewals
+- **Underpayment:** Shows remaining balance needed
+- **Wallet Matching:** Payments must come from the user's registered wallet address
 
-No private routes, host details, ports, internal tokens, or server topology are exposed in this whitepaper.
-
-### 8.1 Redacted implementation example (request validation + access gate)
-
-```js
-// illustrative only (redacted / non-replicable)
-app.post("/api/<feature>", authRequired, (req, res) => {
-  const schema = z.object({
-    fieldA: z.string().min(1),
-    fieldB: z.number().optional(),
-  });
-
-  const parsed = schema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "Invalid payload" });
-  }
-
-  // internal orchestration...
-  return res.json({ ok: true, data: {/* ... */} });
-});
-```
-
-This snippet demonstrates the pattern (schema validation + auth middleware), not full operational behavior.
+### 8.6 Referral Program
+- **Commission:** 10% of every SOL payment from referred users
+- **Tracking:** Unique referral codes per referrer
+- **Payouts:** Processed by admin
 
 ---
 
-## 9. Frontend Technical Architecture (Public-Safe)
+## 9. Authentication and User Management
 
-Observed platform design is consistent with component-driven UI architecture:
+### 9.1 Registration Flow
+1. User registers with email + password + optional wallet address
+2. Email verification sent (SMTP from solanalyze.com)
+3. User verifies email via link
+4. 7-day free trial activated automatically
+5. Optional: Enter referral code during registration
 
-- **Route-scoped pages** for primary flows (landing, analysis, tracer, account/admin contexts)
-- **Feature components** for specialized rendering (e.g., connection/funding/path sections)
-- **Context and hooks** for session and analysis state management
-- **Visualization components** for graph-oriented forensic output
+### 9.2 Session Management
+- Server-side session with secure cookies
+- Session includes: user ID, plan type, helius mode, credit balance, referral status
+- Automatic session refresh on page load
 
-Design priorities:
-- Fast interpretation of complex graph findings
-- Clear separation between summary and deep-dive views
-- Stable analyst workflow under repeated runs
-
-### 9.1 Redacted implementation example (provider mode selection in client flow)
-
-```js
-// illustrative only (redacted / non-replicable)
-const useProxy = heliusMode === "included";
-
-async function fetchTransactions(address, apiKey) {
-  if (useProxy) {
-    return fetch("/api/helius/proxy", {
-      method: "POST",
-      credentials: "include",
-      body: JSON.stringify({ action: "enhanced-transactions", params: { address } }),
-    });
-  }
-
-  // trial mode: user-owned key path (key never hardcoded in app source)
-  return fetch("<provider-endpoint-redacted>", {
-    method: "GET",
-    headers: { "x-user-provider-key": apiKey },
-  });
-}
-```
-
-The real implementation uses stricter validation/error handling; this snippet only documents architecture intent.
+### 9.3 Access Control
+- **Trial:** Core modules only, BYOK Helius, Deep Discovery locked
+- **Paid (Monthly/Yearly):** All modules, included Helius, unlimited queries
+- **Credits:** All modules, included Helius, credit-based usage
+- **Admin:** Full access + admin panel for user management
 
 ---
 
-## 10. Backend Technical Architecture (Public-Safe)
+## 10. Security Posture
 
-Backend design is organized around:
-- Application server entrypoint
-- Config and utility abstraction
-- Database integration module
-- Analysis-support and watcher-style routines
+### 10.1 Application Security
+- HTTPS-only with TLS 1.2+ (Let's Encrypt)
+- Secure session cookies (httpOnly, sameSite)
+- Password hashing with bcrypt
+- Input validation on all API endpoints
+- Rate limiting on authentication endpoints
 
-Public-safe operational principles:
-- Defensive parsing and strict validation
-- Centralized configuration handling (without exposing raw config values)
-- Log discipline aligned with security and compliance
-- Controlled background processing for periodic tasks
+### 10.2 API Security
+- Server-side Helius API proxy (API keys never exposed to client)
+- Request validation and sanitization
+- Error handling without information leakage
 
-No deployment internals, host identifiers, private config files, or credential pathways are published.
-
-### 10.1 Redacted implementation example (subscription access model)
-
-```js
-// illustrative only (redacted / non-replicable)
-function computeAccess(subscription, user) {
-  if (user?.role === "admin") {
-    return { hasAccess: true, mode: "included" };
-  }
-
-  const trialActive = /* internal date logic */;
-  const paidActive  = /* internal date logic */;
-
-  return {
-    hasAccess: trialActive || paidActive,
-    mode: paidActive ? "included" : "own_key",
-  };
-}
-```
-
-This reflects the real design direction (trial vs paid/admin mode separation) while omitting internal scoring/timing details.
-
-### 10.2 Redacted implementation example (provider proxy boundary)
-
-```js
-// illustrative only (redacted / non-replicable)
-app.post("/api/provider/proxy", authRequired, async (req, res) => {
-  const access = computeAccess(/* ... */);
-  if (!access.hasAccess || access.mode !== "included") {
-    return res.status(403).json({ error: "Access denied" });
-  }
-
-  const providerKey = getServerSideProviderKeyForUser(/* ... */);
-  // provider call is executed server-side; key never exposed to browser
-  const data = await callProviderApi({ action: req.body.action, key: providerKey });
-  return res.json({ ok: true, data });
-});
-```
-
-This captures the security boundary: included-tier users access provider functionality via backend proxy.
+### 10.3 Data Security
+- PostgreSQL with parameterized queries (SQL injection prevention)
+- No sensitive data in client-side storage
+- Wallet addresses are public blockchain data (no PII concern)
 
 ---
 
-## 11. Security Architecture and Hardening Principles
+## 11. Export and Reporting
 
-## 11.1 Security baseline
-- Zero inclusion of SSH keys/passwords/API secrets in public docs
-- No IP addresses or private host references
-- No production credential or token examples
-- No internal-only endpoint disclosure
+### 11.1 JSON Export
+- Full analysis results exportable as structured JSON
+- Includes all modules: direct links, intermediate paths, common funders, funding sources, DEX activity, token launches, shared tokens, discovered connections, network graph, recent transactions
+- Wallet labels preserved in export
+- Timestamped filename for report management
 
-## 11.2 Application security controls
-- Input sanitation and schema constraints
-- Authn/Authz boundaries around protected actions
-- Safe exception handling and response minimization
-- Abuse throttling and request governance (redacted specifics)
-
-## 11.3 Data protection posture
-- Principle of least privilege for operational access
-- Separation of public artifacts and private operational assets
-- Environment-driven secret management (implementation withheld)
-- Public repository hygiene to avoid accidental leakage
-
-## 11.4 Supply-chain and dependency discipline
-- Controlled dependency lifecycle
-- Security patching cadence
-- Artifact review before public publication
+### 11.2 Evidence Verification
+- All findings include Solscan-linkable transaction signatures
+- Users can independently verify any finding on-chain
+- External links to DexScreener, Birdeye, and Pump.fun for token analysis
 
 ---
 
-## 12. Threat Model (Public Technical View)
+## 12. Technology Stack
 
-Primary threat categories considered:
-
-1. **Credential leakage**
-   - Mitigation: strict exclusion policy, secret scanning, no sensitive examples in docs
-
-2. **Endpoint reconnaissance**
-   - Mitigation: avoid publishing internal topology and private routes
-
-3. **Abuse and denial patterns**
-   - Mitigation: request governance and anti-abuse controls (non-public)
-
-4. **Inference attacks on proprietary logic**
-   - Mitigation: abstraction and redaction of core scoring internals
-
-5. **Data integrity manipulation**
-   - Mitigation: validation chains, consistency checks, evidence traceability
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 18, Vite, Tailwind CSS |
+| Routing | React Router v6 |
+| Visualization | d3-force (network graphs) |
+| Icons | Lucide React |
+| Backend | Node.js, Express |
+| Database | PostgreSQL |
+| Blockchain | Solana Web3.js, Helius API |
+| Deployment | Nginx, PM2, Let's Encrypt |
+| Payments | On-chain SOL detection |
 
 ---
 
-## 13. Reliability, Scalability, and Performance Strategy
+## 13. Quality and Testing
 
-## 13.1 Reliability goals
-- Deterministic behavior for identical analysis inputs (within data window constraints)
-- Graceful handling of partial upstream data limitations
-- Stable UI response with analyst-centric fallback messaging
+### 13.1 Code Quality
+- Component-based architecture with clear separation of concerns
+- Custom hooks for business logic (useWalletAnalysis, useAuth)
+- Context providers for global state (AuthContext)
+- Consistent design system with reusable UI patterns
 
-## 13.2 Scalability approaches (conceptual)
-- Caching for recurring analytical computations
-- Modular computation stages for selective recomputation
-- Background processing for non-interactive heavy workloads
-
-## 13.3 Performance focus areas
-- Efficient transfer normalization
-- Graph assembly optimization
-- Render-focused payload shaping for UI responsiveness
-
-Exact thresholds, infra sizing, and tuning values are intentionally not disclosed.
-
----
-
-## 14. Observability and Quality Engineering
-
-## 14.1 Observability
-- Structured logs for investigation lifecycle events
-- Error classification for quick triage
-- Operational telemetry (public details redacted)
-
-## 14.2 Testing and quality
+### 13.2 Testing
 - Module-level logic testing for analysis functions
 - API behavior testing (validation/error contracts)
 - UI integration checks for critical investigative paths
@@ -468,7 +465,7 @@ No internal CI secrets, runner configuration internals, or private test fixtures
 
 ---
 
-## 15. Privacy, Legal, and Governance Posture
+## 14. Privacy, Legal, and Governance Posture
 
 Solanalyze is designed as a forensic decision-support tool:
 - It generates analytical signals and evidence views
@@ -483,19 +480,22 @@ Governance-oriented principles:
 
 ---
 
-## 16. Roadmap Direction (Technical Themes)
+## 15. Roadmap Direction (Technical Themes)
 
 Future technical growth themes include:
-- Enhanced explainability layers (human-readable findings summaries)
+- Enhanced explainability layers (AI-powered human-readable findings summaries)
 - Improved confidence framing and signal weighting transparency
 - Extended monitoring capabilities for post-event lifecycle analysis
 - Mobile-first investigation access and workflow portability
+- Memecoin rating engine based on wallet behavior patterns
+- Post-mint live holder monitoring
+- Dev wallet check module
 
 All roadmap items are indicative and subject to product, risk, and engineering priorities.
 
 ---
 
-## 17. Public Repository Publication Policy
+## 16. Public Repository Publication Policy
 
 For public publication, include:
 - Curated UI/UX showcase assets
@@ -510,12 +510,16 @@ Do not include:
 
 ---
 
-## 18. Conclusion
+## 17. Conclusion
 
-Solanalyze provides a technically structured approach to wallet relationship intelligence by combining data normalization, relationship extraction, evidence aggregation, and graph-native presentation.
+Solanalyze provides a technically structured approach to wallet relationship intelligence by combining data normalization, relationship extraction, deep counterparty discovery, shared token detection, evidence aggregation, and graph-native presentation.
+
+With the addition of **Deep Discovery** and **Shared Token Activity**, the platform now goes beyond surface-level analysis to uncover hidden connections that manual investigation would miss entirely. The blacklist and filtering system ensures high signal-to-noise ratio, while confidence scoring helps investigators prioritize findings.
 
 This technical whitepaper is deliberately public-safe:
 - It demonstrates architectural maturity and analytical depth
 - It preserves operational security and proprietary defensibility
 - It enforces strict exclusion of sensitive material (SSH keys, passwords, IPs, secrets)
+
+**Result:** a transparent yet secure technical narrative suitable for public audiences, partners, and evaluators without exposing replicable or sensitive internals.
 
