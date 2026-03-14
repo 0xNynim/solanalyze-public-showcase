@@ -9,11 +9,11 @@
 ## 1) Executive Summary
 
 **Solanalyze** is a forensic intelligence platform for Solana wallet investigations.  
-It helps analysts, traders, and risk teams identify hidden relationships between wallets by combining transfer analysis, path tracing, funder discovery, and behavior signals into one coherent investigation workflow.
+It helps analysts, traders, and risk teams identify hidden relationships between wallets by combining transfer analysis, path tracing, funder discovery, deep counterparty scanning, shared token detection, and behavior signals into one coherent investigation workflow.
 
 The platform is built to answer a hard question quickly:
 
-**“Are these wallets truly independent, or part of the same behavioral cluster?”**
+**"Are these wallets truly independent, or part of the same behavioral cluster?"**
 
 Solanalyze reduces manual chain investigation overhead and provides a structured, visual, and repeatable framework for wallet-level risk assessment.
 
@@ -26,6 +26,8 @@ That creates several issues:
 
 - Critical links are missed in high-volume transaction histories
 - Shared funders and intermediary wallets remain hidden
+- Hidden connections through counterparty overlap go undetected
+- Coordinated token trading patterns are invisible without cross-wallet analysis
 - Investigations are slow and non-repeatable
 - Risk signals are hard to consolidate into one decision
 
@@ -35,26 +37,38 @@ For teams operating in volatile environments (memecoins, fresh launches, coordin
 
 ## 3) What Solanalyze Does
 
-Solanalyze transforms raw wallet activity into structured intelligence through feature modules:
+Solanalyze transforms raw wallet activity into structured intelligence through **10 analysis modules**:
 
 ### Core Modules
 1. **Direct Link Detection**  
-   Detects direct transfer relationships between analyzed wallets.
+   Detects direct SOL and token transfer relationships between analyzed wallets. Records amounts, timestamps, and transaction signatures for evidence.
 
 2. **Common Funder Discovery**  
-   Identifies external wallets funding multiple target wallets.
+   Identifies external wallets funding multiple target wallets. Reveals shared funding origins that indicate coordination.
 
 3. **Intermediate Path Tracing**  
-   Reveals bridge patterns (A → X → B) across one-hop paths.
+   Reveals bridge patterns (A -> X -> B) across one-hop and multi-hop paths. Tracks SOL flow through intermediary wallets.
 
 4. **Funding Source Mapping**  
-   Tracks historical incoming-fund origins for each wallet.
+   Tracks historical incoming-fund origins for each wallet. Identifies known exchange wallets (Binance, Coinbase, Kraken, OKX, Bybit, KuCoin).
 
 5. **DEX Interaction Profiling**  
-   Extracts protocol-level behavior patterns across trading venues.
+   Extracts protocol-level behavior patterns across trading venues including Jupiter, Raydium, Orca, Phoenix, Meteora, and Pump.fun.
 
-6. **Network Visualization Layer**  
-   Converts findings into an interpretable graph model for fast pattern recognition.
+6. **Token Launch Detection**  
+   Detects Pump.fun launches and Raydium pool creation by analyzed wallets. Identifies insider buying patterns and sniper timing.
+
+7. **Deep Discovery (Deep Search)** NEW  
+   The most powerful module. Scans significant counterparties of analyzed wallets to find hidden connections invisible to standard analysis. Classifies connections as mutual contacts, fund relays, shared recipients, shared funders, or chain connections. Includes confidence scoring with temporal proximity bonuses. Extends all other modules with newly discovered findings.
+
+8. **Shared Token Activity** NEW  
+   Detects when multiple analyzed wallets traded the same token. Calculates confidence scores based on temporal proximity and trading pattern correlation. Enriches with token metadata (name, symbol, image).
+
+9. **Wallet Labels (Investigator Annotation)**  
+   Assign custom names to wallet addresses for improved readability. Labels propagate across all result sections, the network graph, and JSON exports.
+
+10. **Interactive Network Graph**  
+    Converts all findings into an interactive force-directed graph. Color-coded nodes and edges for different entity types. Supports drag, zoom, and hover tooltips.
 
 ---
 
@@ -62,204 +76,141 @@ Solanalyze transforms raw wallet activity into structured intelligence through f
 
 Below is a simplified, non-sensitive representation of the analysis flow:
 
-```pseudo
-INPUT: wallet_addresses[]
+```
+INPUT: wallet_addresses[] (up to 10)
 
-validate_addresses(wallet_addresses)
+Step 1 — Validate & Ingest
+  validate addresses (base58, max 10)
+  fetch transaction history per wallet
+  normalize transfers (SOL + token)
+  classify program interactions (DEX, token, system)
 
-for each wallet in wallet_addresses:
-    tx_data = fetch_transaction_dataset(wallet)
-    transfers += extract_native_and_token_transfers(tx_data)
+Step 2 — Core Analysis
+  detect direct links between wallets
+  trace intermediate paths (A -> X -> B)
+  discover common funders
+  map funding sources per wallet
+  profile DEX interactions
+  detect token launches + insider buys
+  detect shared token activity across wallets
 
-direct_links       = detect_direct_edges(transfers, wallet_addresses)
-common_funders     = detect_shared_funders(transfers, wallet_addresses)
-intermediate_paths = detect_one_hop_paths(transfers, wallet_addresses)
-funding_sources    = infer_initial_funding_sources(transfers, wallet_addresses)
-dex_activity       = classify_protocol_interactions(transfers)
+Step 3 — Deep Discovery (optional, paid plans)
+  score significant counterparties
+  filter blacklisted addresses (Jito tips, protocols, bots)
+  scan top counterparties for hidden connections
+  classify connection types (mutual_contact, fund_relay, shared_recipient, shared_funder, chain_connection)
+  calculate confidence scores
+  extend core modules with deep findings
 
-graph = build_network(
-    nodes = wallets + intermediaries + funders + labeled_entities,
-    edges = direct_links + intermediate_paths + funding_edges
-)
-
-OUTPUT: investigation_report
+Step 4 — Visualize & Export
+  build interactive network graph
+  add discovery nodes to graph
+  generate structured JSON export
+  present results with wallet labels
 ```
 
-This representation is deliberately abstracted for showcase purposes.
+---
+
+## 5) Deep Discovery — In Detail
+
+Deep Discovery is Solanalyze's most advanced analysis capability. It goes beyond the wallets you enter and actively scans their counterparties to find connections that would be invisible to standard analysis.
+
+### How It Works
+1. **Counterparty Scoring:** For each analyzed wallet, the system identifies significant recipients — wallets that received meaningful SOL amounts (not just dust or fees).
+2. **Blacklist Filtering:** Known non-user addresses are automatically excluded: Jito tip accounts, protocol fee wallets, system programs, and high-frequency bot addresses.
+3. **Discovery Scanning:** The system fetches transaction history for the top-scored counterparties.
+4. **Connection Detection:** It checks whether any discovery wallet also transacted with OTHER analyzed wallets, revealing hidden links.
+5. **Confidence Scoring:** Each discovered connection receives a confidence score based on connection type, transaction volume, and temporal proximity.
+
+### Connection Types
+- **Mutual Contact:** Discovery wallet transacted with both Wallet A and Wallet B
+- **Fund Relay:** Discovery wallet received from A and sent to B (money laundering pattern)
+- **Shared Recipient:** Both A and B sent funds to the same discovery wallet
+- **Shared Funder:** Discovery wallet funded both A and B
+- **Chain Connection:** Multi-hop chain (A -> X -> Y -> B) through multiple discovery wallets
+
+### Why It Matters
+Without Deep Discovery, an investigator would only see connections between the wallets they explicitly entered. With Deep Discovery enabled, Solanalyze automatically finds the "missing links" — intermediary wallets that connect seemingly unrelated addresses.
 
 ---
 
-## 5) Example Insight Outputs (Illustrative)
+## 6) Shared Token Activity — In Detail
 
-### A) Relationship Insight
-- Wallet A and Wallet B have no direct transfers
-- Both wallets receive funding from the same external source
-- One intermediate wallet appears in both activity timelines
+Shared Token Activity detects when multiple analyzed wallets traded or held the same token, which is a strong indicator of coordination.
 
-**Interpretation:** potential operational linkage despite no direct edge.
+### How It Works
+1. Scans all token transfer activity across analyzed wallets
+2. Identifies tokens that appear in transactions of 2+ analyzed wallets
+3. Calculates confidence based on temporal proximity (closer trades = higher score)
+4. Enriches with token metadata (name, symbol, image) via API
+5. Provides per-wallet activity breakdown (buys, sells, transaction count)
 
-### B) Funding Pattern Insight
-- 4 target wallets funded by 1 repeating source cluster
-- Funding windows are tightly correlated
-- DEX behavior overlaps in the same time periods
-
-**Interpretation:** likely coordinated origin or shared operator strategy.
+### Why It Matters
+Coordinated wallet clusters often trade the same tokens — especially in pump-and-dump schemes. If Wallet A and Wallet B both bought $PHANTOM within seconds of each other, that's a strong signal they're controlled by the same entity.
 
 ---
 
-## 6) Public vs Private Components
+## 7) Pricing and Access
 
-To protect SaaS defensibility, Solanalyze separates public showcase assets from private production assets.
+Solanalyze uses transparent, on-chain SOL payments with automatic detection.
 
-## Public (Showcase)
-- Product concept and investigative framework
-- High-level architecture
-- Simplified pseudocode/snippets
-- UI screenshots and feature narratives
-- Non-sensitive mock examples
+### Free Trial
+- **7 days** free access after registration
+- All core analysis modules included
+- Bring Your Own Helius API Key (free at helius.dev)
+- Deep Discovery locked during trial
 
-## Private (Not Published)
-- Proprietary scoring/ranking heuristics
-- Full backend orchestration and optimization logic
-- Internal anti-abuse/risk rules
-- Infrastructure, credentials, and key management
-- Production-grade data pipelines and monetization logic
+### Monthly Flatrate — 0.5 SOL
+- Unlimited queries
+- All modules including Deep Discovery
+- Helius API included (no key needed)
 
----
+### Yearly Flatrate — 4.0 SOL (save 33%)
+- Unlimited queries
+- All modules including Deep Discovery
+- Helius API included (no key needed)
 
-## 7) Security & IP Protection Principles
+### Pay-per-Use Credits
+- 10 credits per standard query
+- 30 credits per Deep Discovery scan
+- Credits never expire
+- Helius API included
 
-This public whitepaper and showcase repository are prepared under the following rules:
+| Amount | Credits | Standard Queries | Deep Discovery Scans |
+|--------|---------|-----------------|---------------------|
+| 0.10 SOL | 500 | 50 | ~16 |
+| 0.20 SOL | 1,250 | 125 | ~41 |
+| 0.30 SOL | 2,250 | 225 | ~75 |
+| 0.40 SOL | 3,500 | 350 | ~116 |
 
-- No secrets, keys, or private credentials
-- No complete production flow disclosure
-- No deploy-sensitive infrastructure details
-- No full algorithmic replication path
-- Principle of “demonstrate capability, protect implementation”
+### Payment Details
+- **Payment Wallet:** `ADwDdN9EJvRhwZk1kv8WcmAbh973QoaBhc4johxNYNiM`
+- Payments detected automatically within ~60 seconds
+- Overpayment stored as credit balance
+- Send from your registered wallet address
 
----
-
-## 8) Product Positioning
-
-Solanalyze is positioned as a **forensic decision-support platform** for:
-
-- On-chain investigators
-- Advanced traders
-- Research teams
-- Risk and compliance workflows in Web3-native environments
-
-The long-term product strategy is to evolve from descriptive analytics to predictive risk intelligence.
-
----
-
-## 9) Official Dev & Payment Wallet
-
-The official Solanalyze dev/payment wallet (0xNynim) is:
-
-`ADwDdN9EJvRhwZk1kv8WcmAbh973QoaBhc4johxNYNiM`
-
-This wallet is publicly designated as:
-- the payment-receiving wallet for Solanalyze tool access
-- the planned launch wallet context for the future Solanalyze ecosystem coin
-
-This statement is included for transparency and traceability in public-facing materials.
+### Referral Program
+- Earn 10% commission on all payments from referred users
+- Unique referral codes and share links
+- Payouts processed by admin
 
 ---
 
-## 10) Roadmap
+## 8) Investigation Workflow
 
-Roadmap note: This roadmap is a living document and may change based on product learnings, market feedback, and technical priorities.
+A typical Solanalyze investigation follows this pattern:
 
-All milestones listed below are post-launch milestones and follow the Solanalyze tool go-live (Sunday, 15.03.2026, approx. 20:00 CET).
-
-### Week 1 (Post-Launch) — AI Findings Agent
-- AI assistant that summarizes investigation findings
-- Explains wallet connections in natural language
-- Adds contextual risk interpretation and confidence framing
-
-### Week 2 (Post-Launch) — Dev Wallet Check
-- Dedicated view for developer-centric linkage analysis
-- Surfaces wallets/funders historically connected to the dev wallet cluster
-- Includes focused analytics around the official Solanalyze dev/payment wallet context
-- Improves due diligence for launch and team-related risk checks
-
-### Week 4 (Post-Launch) — Android App (Play Store)
-- Mobile app release for faster, portable investigation workflows
-- Core analysis visibility optimized for mobile usage
-- Push-ready architecture for future real-time alerts
-
-### Post-Launch (within 7 days after tool go-live) — Solanalyze Coin Context
-- Public ecosystem expansion with a Solana coin aligned to the Solanalyze brand
-- Planned launch window: within the first 7 days after Solanalyze tool go-live
-- On-chain transparency anchored to the publicly declared dev/payment wallet context
-
-### TBD (Post-Launch) — Memecoin Rating Engine
-- Model-driven rating system for new Solana launches
-- Learns from aggregated wallet behavior, funding structure, and on-chain patterns
-- Produces legitimacy/risk-oriented scoring signals
-
-### TBD (Post-Launch) — Post-Mint Live Holder Monitoring
-- Continuous monitoring after Pump.fun token mint events
-- Holder-distribution evolution tracking in near real-time
-- Ongoing risk analysis on concentration, migration, and suspicious coordination patterns
-
----
-
-## 11) Showcase Repository Guidance
-
-For public GitHub publishing, include only:
-- curated UI components
-- screenshots/demo media
-- this whitepaper
-- mock-safe examples
-
-Exclude:
-- private backend code
-- environment files
-- admin/payment/security internals
-- temporary scripts, SQL debug artifacts, operational configs
-
----
-
-## 12) Legal Notice
-
-This showcase material is provided for demonstration and evaluation purposes.  
-No permission is granted to reproduce, commercialize, or deploy proprietary Solanalyze systems without explicit authorization.
-
-**License:** Private / All Rights Reserved.
-
----
-
-## 13) Founder Story (0xNynim)
-
-> “I started my Solana journey in 2022, joining communities focused on trading and launching coins. Along the way, I realized how often those coins were dumped — and I lost a lot of funds and more importantly, motivation.
->
-> Even after moving into smaller, more private launch groups, the same pattern kept happening. We were dumped on repeatedly, and people started making money off our dev shoulders.
->
-> In early 2025, we had a massive coin launch that initially went well. I was part of the dev team, we had a few strong whales with us, and we worked for two straight weeks with almost no sleep to make it happen. But in the end, we got farmed by someone who had been in early with us.
->
-> I knew it had to be someone close to the team. I spent weeks crawling Solscan, trying to find the mole. Even though we knew many of the trading wallets, I couldn’t connect the dots — it became too complex and too time-consuming.
->
-> I rage-quit the Solana memecoin space for almost a year. But I didn’t go silent. I kept searching for tools that could help identify the actor behind it all. I found nothing that could solve it properly.
->
-> So I started building my own.
->
-> In my head, I called it Solanalyze.
->
-> After weeks of coding my first stable alpha, I entered every team member wallet and compared them against the dumper wallets. To my surprise, Solanalyze found a solid connection between one team member wallet and the dumper wallets.
->
-> From that moment on, the evidence kept growing. I was finally able to expose someone who had been with us for years.
->
-> He tried to hide — but Solanalyze was simply better.
->
-> Beyond crypto, I work in the real world as a certified cybersecurity professional and a TÜV Rheinland Academy certified GDPR expert, and I am part of one of the enterprise giants in the IT world. That background shaped how I approached this problem: structured, evidence-driven, and focused on traceability — and like a hunting dog that has smelled blood.
->
-> That is when I decided to fully build this tool and make it available for everyone. After all the time, hard work, investment, sleepless nights, frustration, and several rage-quits… it is finally here. This is how Solanalyze.com was born, this is how I launched the 0xUnstable.world Development Collective, this is how I came back to Solana… and this is how I want to help people clean up the space and have a fair chance.”  
-> — 0xNynim
-
----
-
-## 14) Closing Note
-
-Solanalyze is built to make hidden wallet relationships understandable, explainable, and actionable.  
-The public showcase demonstrates the product’s analytical depth while preserving the proprietary core required for long-term SaaS defensibility.
+1. **Enter Wallets:** Paste up to 10 suspicious wallet addresses
+2. **Label Wallets:** Optionally assign names (e.g., "Deployer", "Sniper Bot A")
+3. **Enable Deep Discovery:** Toggle on for maximum depth (paid plans)
+4. **Run Analysis:** Click "Trace Connections" and watch real-time progress
+5. **Review Results:** Examine each module's findings:
+   - Network graph for visual overview
+   - Direct links for explicit transfers
+   - Intermediate paths for hidden routing
+   - Common funders for shared origins
+   - Token launches for insider patterns
+   - Shared tokens for coordinated trading
+   - Deep Discovery for hidden connections
+6. **Export Evidence:** Download full JSON report with all findings and transaction signatures
+7. **Verify On-Chain:** Click any transaction signature to verify on Sol
