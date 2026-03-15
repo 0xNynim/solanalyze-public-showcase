@@ -14,9 +14,10 @@ Solanalyze is a web-based forensic tool that analyzes relationships between Sola
 - **Funding Sources** — Where each wallet received its initial funding
 - **DEX Activity** — Trading behavior across Jupiter, Raydium, Orca, Pump.fun, and more
 - **Token Launches** — Pump.fun and Raydium token deployments by analyzed wallets, with insider buy detection
-- **Deep Discovery (Deep Search)** — Scans counterparties to find hidden connections invisible to standard analysis *(NEW)*
-- **Shared Token Activity** — Detects when wallets traded the same token with confidence scoring *(NEW)*
-- **Wallet Labels** — Assign custom names to wallets for readability across all results *(NEW)*
+- **Deep Discovery (Deep Search)** — Scans counterparties to find hidden connections invisible to standard analysis
+- **Shared Token Activity** — Detects when wallets traded the same token with confidence scoring
+- **Top Holder Map (Bubble Map)** — Interactive bubble map for any Solana token showing top holders, % holdings, and bundle detection. FREE for all users *(NEW)*
+- **Wallet Labels** — Assign custom names to wallets for readability across all results
 - **Interactive Network Graph** — Visual force-directed graph of all findings
 
 All findings include clickable transaction signatures for on-chain verification via Solscan.
@@ -62,14 +63,33 @@ After entering addresses, a label section appears below:
 - Maximum 20 characters per label
 - Labels are optional but highly recommended for readability
 
-### 3.3 Enable Deep Discovery (Optional)
+### 3.3 Top Holder Map (Bubble Map)
+Before running a wallet analysis, you can use the **Top Holder Map** to visualize any token's holder distribution:
+
+1. Click the **"Top Holder Map"** button above the wallet input area (marked as FREE)
+2. Enter a **Solana token mint address** (e.g., a Pump.fun token)
+3. The system fetches the top 20 holders and renders an interactive bubble map:
+   - **Bubble size** = percentage of total supply held
+   - **Transfer links** between holders indicate potential bundles
+   - **Hover** any bubble to see wallet details and exact holdings
+   - **Click** bubbles to select wallets (green selection ring)
+4. Use the **holder list panel** on the right to browse all holders with copy/Solscan links
+5. Click **"Load N Wallets into Tracer"** to send selected wallets directly into the Tracer for full forensic analysis
+
+**Key details:**
+- **FREE** — No credits or paid plan required (available to all logged-in users)
+- Best suited for smaller tokens (Pump.fun memecoins, <100K holders)
+- Very large tokens (USDC, BONK) may fail due to RPC limitations
+- 5-second cooldown between requests
+
+### 3.4 Enable Deep Discovery (Optional)
 - Toggle the **Deep Discovery** switch to enable deep counterparty scanning
 - Deep Discovery scans significant recipients of your analyzed wallets to find hidden connections
 - **Available on:** Monthly, Yearly, and Pay-per-Use plans
 - **Not available on:** Free trial
 - **Credit cost:** 30 credits per scan (Pay-per-Use plans)
 
-### 3.4 Run the Analysis
+### 3.5 Run the Analysis
 - Click **"Trace Connections"**
 - Watch the real-time progress bar showing each analysis step
 - Analysis typically takes 15-60 seconds depending on wallet activity and Deep Discovery
@@ -147,7 +167,18 @@ Shows when multiple wallets traded the same token:
 - Links to Pump.fun, DexScreener, Birdeye for further analysis
 - Evidence transaction signatures
 
-### 4.10 Deep Discovery — Discovered Connections *(NEW)*
+### 4.10 Top Holder Map *(NEW)*
+Interactive bubble map visualization for any Solana token:
+- Bubble size proportional to % of total supply held
+- Transfer links between holders indicate potential bundle activity
+- Hover tooltips with wallet address, token amount, and percentage
+- Click-to-select wallets with green selection ring
+- Holder list panel with checkboxes, copy buttons, and Solscan links
+- "Load into Tracer" button to send selected wallets for full analysis
+- Zoom controls and legend
+- Token metadata display (name, symbol, image)
+
+### 4.11 Deep Discovery — Discovered Connections
 Shows hidden connections found by scanning counterparties:
 - Visual path: Wallet A → Discovery Wallet → Wallet B
 - Connection type badge (Mutual Contact, Fund Relay, Shared Recipient, Shared Funder, Chain Connection)
@@ -155,7 +186,7 @@ Shows hidden connections found by scanning counterparties:
 - Full addresses with copy buttons and Solscan links
 - Evidence transaction signatures
 
-### 4.11 Recent Transfers
+### 4.12 Recent Transfers
 Table of the most recent transfers between analyzed wallets:
 - Transfer type (SOL or Token), from/to addresses
 - Amount, source protocol, transaction signature
@@ -265,6 +296,15 @@ A: No, credits never expire.
 **Q: What is Shared Token Activity?**  
 A: It detects when multiple analyzed wallets traded the same token. This is especially suspicious when trades happened close in time, indicating coordinated activity.
 
+**Q: What is the Top Holder Map?**  
+A: The Top Holder Map (Bubble Map) is a free tool that visualizes the top holders of any Solana token as an interactive bubble chart. Bubble sizes represent % of supply held, and transfer links between holders indicate potential bundle activity. You can select holders and load them directly into the Tracer for full forensic analysis.
+
+**Q: Does the Top Holder Map cost credits?**  
+A: No. The Top Holder Map is completely FREE for all logged-in users, regardless of plan.
+
+**Q: Which tokens work with the Top Holder Map?**  
+A: It works best with smaller tokens like Pump.fun memecoins (under ~100K holders). Very large tokens like USDC or BONK may fail due to RPC limitations with millions of holder accounts.
+
 **Q: Can I use Solanalyze without a Helius API key?**  
 A: Yes, on paid plans (Monthly, Yearly, Credits) the Helius API is included. Only free trial users need to provide their own key.
 
@@ -282,6 +322,6 @@ A: Yes, click "Export JSON" to download a complete report with all findings.
 ## 11. Support
 
 - **Website:** [solanalyze.com](https://solanalyze.com)
-- **Telegram:** [@0xnynim](https://t.me/xNynim)
-- **Twitter/X:** [@xNynim](https://x.com/0xNynim)
+- **X-Community:** [@0xUnstable.world](https://x.com/i/communities/2031110059803987991)
+- **Twitter/X:** [@0xNynim](https://x.com/0xNynim)
 - **Developer Collective:** [0xUnstable.world](https://0xunstable.world)
