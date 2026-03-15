@@ -4,7 +4,7 @@
 > This document provides a technical overview of Solanalyze for public audiences.  
 > It is intentionally redacted to protect sensitive infrastructure, security controls, and proprietary implementation details.  
 
-VERSION 0.9.14032026 BETA_PRERELEASESTAGE
+VERSION 0.9.15032026 BETA
 
 ---
 
@@ -92,7 +92,7 @@ Solanalyze addresses this by building an end-to-end analytical loop:
 
 ## 5. Analysis Modules
 
-Solanalyze implements **10 core analysis modules** that work together to build a comprehensive picture of wallet relationships.
+Solanalyze implements **11 core analysis modules** that work together to build a comprehensive picture of wallet relationships.
 
 ### 5.1 Direct Link Detection
 Detects direct SOL and token transfer relationships between analyzed wallets.
@@ -231,7 +231,29 @@ Allows investigators to assign custom human-readable names to wallet addresses f
 
 **Output:** Label map applied across all visualization and result components.
 
-### 5.10 Interactive Network Graph
+### 5.10 Top Holder Map (Bubble Map) ⭐ NEW
+Provides an interactive bubble map visualization for any Solana token, showing the distribution of top holders and detecting potential bundle activity through transfer analysis.
+
+**Capabilities:**
+- Fetches top 20 largest token accounts for any SPL token mint address
+- Resolves owner wallets from token accounts via on-chain data
+- Calculates percentage of total supply held by each holder
+- Renders interactive force-directed bubble chart (bubble size = % holding)
+- **Bundle Detection:** Analyzes transfer history between top holders using Helius parse-transactions API to identify wallets that have transacted with each other
+- **Transfer Links:** Draws connection lines between holders who have transferred tokens/SOL between each other, with transaction count labels
+- **LP Detection:** Identifies liquidity pool accounts (Raydium, Orca, Meteora) and marks them distinctly
+- **Interactive Selection:** Click-to-select wallets with visual selection ring, then load selected wallets directly into the Tracer for full forensic analysis
+- **Token Metadata:** Resolves token name, symbol, and image via Helius DAS API and Pump.fun metadata enrichment
+- Dust filter: excludes holders with less than 0.5% of total supply
+- Multi-RPC fallback chain: Helius → Ankr → Public Solana RPC for reliability
+
+**Access:** FREE for all logged-in users — no credits or paid plan required.
+
+**Limitations:** Best suited for smaller tokens (Pump.fun memecoins, <100K holders). Very large tokens (USDC, BONK with millions of holders) may fail due to RPC limitations.
+
+**Output:** Token metadata, holder list with wallet addresses/percentages/ranks, transfer links between holders with transaction counts.
+
+### 5.11 Interactive Network Graph
 Converts all findings into an interactive force-directed graph for visual pattern recognition.
 
 **Capabilities:**
@@ -263,7 +285,8 @@ INPUT: wallet_addresses[], options { deepDiscovery, walletLabels }
      normalize_transfers(transactions)
      classify_programs(transactions)  // DEX, token, system
 
-3. ANALYZE — CORE MODULES
+3. ANALYZE — CORE MODULES (+ standalone tools)
+   top_holder_map     = bubble_map(token_mint)  // standalone, FREE
    direct_links       = find_direct_transfers(wallets, all_transfers)
    intermediate_links = find_intermediate_paths(wallets, all_transfers)
    common_funders     = find_common_funders(wallets, all_transfers)
@@ -437,7 +460,7 @@ Solanalyze operates a transparent, on-chain payment model using SOL on the Solan
 |-------|-----------|
 | Frontend | React 18, Vite, Tailwind CSS |
 | Routing | React Router v6 |
-| Visualization | d3-force (network graphs) |
+| Visualization | d3-force (network graphs), react-force-graph-2d (bubble maps) |
 | Icons | Lucide React |
 | Backend | Node.js, Express |
 | Database | PostgreSQL |
@@ -522,4 +545,3 @@ This technical whitepaper is deliberately public-safe:
 - It enforces strict exclusion of sensitive material (SSH keys, passwords, IPs, secrets)
 
 **Result:** a transparent yet secure technical narrative suitable for public audiences, partners, and evaluators without exposing replicable or sensitive internals.
-
