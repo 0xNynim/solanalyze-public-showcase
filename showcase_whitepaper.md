@@ -37,7 +37,7 @@ For teams operating in volatile environments (memecoins, fresh launches, coordin
 
 ## 3) What Solanalyze Does
 
-Solanalyze transforms raw wallet activity into structured intelligence through **10 analysis modules**:
+Solanalyze transforms raw wallet activity into structured intelligence through **11 analysis modules**:
 
 ### Core Modules
 1. **Direct Link Detection**  
@@ -67,7 +67,10 @@ Solanalyze transforms raw wallet activity into structured intelligence through *
 9. **Wallet Labels (Investigator Annotation)**  
    Assign custom names to wallet addresses for improved readability. Labels propagate across all result sections, the network graph, and JSON exports.
 
-10. **Interactive Network Graph**  
+10. **Top Holder Map (Bubble Map)** NEW  
+    Interactive bubble map for any Solana token. Enter a token mint address and instantly see the top holders visualized as bubbles (sized by % of supply held). Transfer links between holders reveal potential bundle activity. Select holders and load them directly into the Tracer for full forensic analysis. **FREE for all logged-in users** — no credits required.
+
+11. **Interactive Network Graph**  
     Converts all findings into an interactive force-directed graph. Color-coded nodes and edges for different entity types. Supports drag, zoom, and hover tooltips.
 
 ---
