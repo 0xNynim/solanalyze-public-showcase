@@ -80,10 +80,10 @@ Solanalyze transforms raw wallet activity into structured intelligence through *
 Below is a simplified, non-sensitive representation of the analysis flow:
 
 ```
-INPUT: wallet_addresses[] (up to 10)
+INPUT: wallet_addresses[] (up to 30)
 
 Step 1 — Validate & Ingest
-  validate addresses (base58, max 10)
+  validate addresses (base58, max 30)
   fetch transaction history per wallet
   normalize transfers (SOL + token)
   classify program interactions (DEX, token, system)
@@ -175,16 +175,16 @@ Solanalyze uses transparent, on-chain SOL payments with automatic detection.
 
 ### Pay-per-Use Credits
 - 10 credits per standard query
-- 30 credits per Deep Discovery scan
+- 30 extra credits per Deep Discovery scan (40 total including base query)
 - Credits never expire
 - Helius API included
 
-| Amount | Credits | Standard Queries | Deep Discovery Scans |
-|--------|---------|-----------------|---------------------|
-| 0.10 SOL | 500 | 50 | ~16 |
-| 0.20 SOL | 1,250 | 125 | ~41 |
-| 0.30 SOL | 2,250 | 225 | ~75 |
-| 0.40 SOL | 3,500 | 350 | ~116 |
+| Amount | Credits | Standard Queries (10 each) | Deep Discovery Scans (40 each) |
+|--------|---------|---------------------------|-------------------------------|
+| 0.10 SOL | 500 | 50 | ~12 |
+| 0.20 SOL | 1,250 | 125 | ~31 |
+| 0.30 SOL | 2,250 | 225 | ~56 |
+| 0.40 SOL | 3,500 | 350 | ~87 |
 
 ### Payment Details
 - **Payment Wallet:** `ADwDdN9EJvRhwZk1kv8WcmAbh973QoaBhc4johxNYNiM`
@@ -203,7 +203,7 @@ Solanalyze uses transparent, on-chain SOL payments with automatic detection.
 
 A typical Solanalyze investigation follows this pattern:
 
-1. **Enter Wallets:** Paste up to 10 suspicious wallet addresses
+1. **Enter Wallets:** Paste up to 30 suspicious wallet addresses
 2. **Label Wallets:** Optionally assign names (e.g., "Deployer", "Sniper Bot A")
 3. **Enable Deep Discovery:** Toggle on for maximum depth (paid plans)
 4. **Run Analysis:** Click "Trace Connections" and watch real-time progress
@@ -217,3 +217,4 @@ A typical Solanalyze investigation follows this pattern:
    - Deep Discovery for hidden connections
 6. **Export Evidence:** Download full JSON report with all findings and transaction signatures
 7. **Verify On-Chain:** Click any transaction signature to verify on Sol
+
