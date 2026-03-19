@@ -4,7 +4,7 @@
 > This document provides a technical overview of Solanalyze for public audiences.  
 > It is intentionally redacted to protect sensitive infrastructure, security controls, and proprietary implementation details.  
 
-VERSION 0.9.15032026 BETA
+VERSION 1.0.0 — June 2025
 
 ---
 
@@ -196,7 +196,7 @@ The most powerful analysis module. Scans significant counterparties of analyzed 
   - Adds newly found intermediate paths to the Intermediate Links results
   - Adds newly found funding sources to the Funding Sources results
 
-**Access:** Available on Monthly, Yearly, and Pay-per-Use plans (not available during free trial). Costs 30 credits per scan on Pay-per-Use plans.
+Costs 30 extra credits per scan on Pay-per-Use plans (40 total including the 10-credit base query).
 
 **Output:** Discovered connection objects with wallet paths, connection types, confidence scores, SOL volumes, and evidence signatures.
 
@@ -223,7 +223,7 @@ Detects when multiple analyzed wallets traded or held the same token, with confi
 Allows investigators to assign custom human-readable names to wallet addresses for improved readability across all result sections.
 
 **Capabilities:**
-- Assign labels to up to 10 analyzed wallets before or during analysis
+- Assign labels to up to 30 analyzed wallets before or during analysis
 - Labels propagate to ALL result sections (Direct Links, Common Funders, Intermediate Paths, Deep Discovery, Shared Tokens, Network Graph, etc.)
 - Labels appear as colored badges next to truncated addresses
 - Labels are preserved in JSON export for report sharing
@@ -277,7 +277,7 @@ Below is a simplified, non-sensitive representation of the analysis flow:
 INPUT: wallet_addresses[], options { deepDiscovery, walletLabels }
 
 1. VALIDATE
-   validate_addresses(wallet_addresses)  // max 10, base58 format
+   validate_addresses(wallet_addresses)  // max 30, base58 format
 
 2. INGEST
    for each wallet:
@@ -375,12 +375,12 @@ Solanalyze operates a transparent, on-chain payment model using SOL on the Solan
 - **Helius API:** Included (server-side proxy)
 - **Credits never expire**
 
-| SOL Amount | Credits | Queries | Deep Discovery Scans |
-|-----------|---------|---------|---------------------|
-| 0.10 SOL  | 500     | 50      | ~16                 |
-| 0.20 SOL  | 1,250   | 125     | ~41                 |
-| 0.30 SOL  | 2,250   | 225     | ~75                 |
-| 0.40 SOL  | 3,500   | 350     | ~116                |
+| SOL Amount | Credits | Queries (10 each) | Deep Discovery Scans (40 each) |
+|-----------|---------|-------------------|-------------------------------|
+| 0.10 SOL  | 500     | 50                | ~12                           |
+| 0.20 SOL  | 1,250   | 125               | ~31                           |
+| 0.30 SOL  | 2,250   | 225               | ~56                           |
+| 0.40 SOL  | 3,500   | 350               | ~87                           |
 
 ### 8.5 Payment Mechanics
 - **Payment Wallet:** `ADwDdN9EJvRhwZk1kv8WcmAbh973QoaBhc4johxNYNiM`
