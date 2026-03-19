@@ -6,7 +6,7 @@
 
 ## 1. What is Solanalyze?
 
-Solanalyze is a web-based forensic tool that analyzes relationships between Solana wallets. Enter up to 10 wallet addresses and the platform will automatically detect:
+Solanalyze is a web-based forensic tool that analyzes relationships between Solana wallets. Enter up to 30 wallet addresses and the platform will automatically detect:
 
 - **Direct Links** — Direct SOL and token transfers between wallets
 - **Common Funders** — External wallets that funded multiple target wallets
@@ -52,7 +52,7 @@ Paid plan users (Monthly, Yearly, Credits) get Helius API access included — no
 
 ### 3.1 Enter Wallet Addresses
 - Navigate to the **Tracer** page (`/tracer`)
-- Paste up to **10 wallet addresses** in the text area
+- Paste up to **30 wallet addresses** in the text area
 - Addresses can be separated by newlines, commas, or spaces
 - The system validates base58 format automatically
 
@@ -87,7 +87,7 @@ Before running a wallet analysis, you can use the **Top Holder Map** to visualiz
 - Deep Discovery scans significant recipients of your analyzed wallets to find hidden connections
 - **Available on:** Monthly, Yearly, and Pay-per-Use plans
 - **Not available on:** Free trial
-- **Credit cost:** 30 credits per scan (Pay-per-Use plans)
+- **Credit cost:** 30 extra credits per scan, in addition to the 10 credits for the base query (40 total per Deep Discovery scan)
 
 ### 3.5 Run the Analysis
 - Click **"Trace Connections"**
@@ -223,16 +223,16 @@ Table of the most recent transfers between analyzed wallets:
 
 ### Pay-per-Use Credits
 - 10 credits per standard query
-- 30 credits per Deep Discovery scan
+- 30 extra credits per Deep Discovery scan (40 total including base query)
 - Credits never expire
 - Helius API included
 
-| Amount | Credits | Queries | Deep Discovery Scans |
-|--------|---------|---------|---------------------|
-| 0.10 SOL | 500 | 50 | ~16 |
-| 0.20 SOL | 1,250 | 125 | ~41 |
-| 0.30 SOL | 2,250 | 225 | ~75 |
-| 0.40 SOL | 3,500 | 350 | ~116 |
+| Amount | Credits | Queries (10 each) | Deep Discovery Scans (40 each) |
+|--------|---------|-------------------|-------------------------------|
+| 0.10 SOL | 500 | 50 | ~12 |
+| 0.20 SOL | 1,250 | 125 | ~31 |
+| 0.30 SOL | 2,250 | 225 | ~56 |
+| 0.40 SOL | 3,500 | 350 | ~87 |
 
 ---
 
@@ -279,7 +279,7 @@ Table of the most recent transfers between analyzed wallets:
 ## 10. FAQ
 
 **Q: How many wallets can I analyze at once?**  
-A: Up to 10 wallet addresses per analysis.
+A: Up to 30 wallet addresses per analysis.
 
 **Q: What is Deep Discovery?**  
 A: Deep Discovery scans the significant counterparties of your analyzed wallets to find hidden connections that standard analysis would miss. It's the most powerful feature for uncovering coordinated wallet clusters.
@@ -288,7 +288,7 @@ A: Deep Discovery scans the significant counterparties of your analyzed wallets 
 A: Deep Discovery requires additional API calls and server resources. It's available on all paid plans (Monthly, Yearly, Credits).
 
 **Q: How much does Deep Discovery cost on Pay-per-Use?**  
-A: 30 credits per Deep Discovery scan, in addition to the 10 credits for the base query.
+A: 30 extra credits per Deep Discovery scan, in addition to the 10 credits for the base query (40 credits total per scan).
 
 **Q: Do credits expire?**  
 A: No, credits never expire.
